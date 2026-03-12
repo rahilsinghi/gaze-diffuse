@@ -49,5 +49,9 @@ Thumbs.db
 .env
 *.key
 
+# Claude Code (local only)
+CLAUDE.md
+everything-claude-code/
+
 # Large files
 *.docx
