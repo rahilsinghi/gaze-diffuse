@@ -23,7 +23,7 @@ env/
 .ipynb_checkpoints/
 
 # Data (download locally, don't commit)
-data/
+/data/
 *.csv
 *.tsv
 *.xlsx
