@@ -86,9 +86,16 @@ def load_geco_corpus(data_dir: str | Path) -> pd.DataFrame:
             f"GECO file missing expected columns. Found: {list(df.columns)}"
         )
 
-    # Extract sentence ID from WORD_ID (format: "w1.1" → sentence 1)
-    df["sentence_id"] = df["WORD_ID"].str.extract(r"w(\d+)\.\d+").astype(int)
-    df["word_position"] = df["WORD_ID"].str.extract(r"w\d+\.(\d+)").astype(int)
+    # Extract sentence/trial ID and word position from WORD_ID.
+    # GECO format is "PART-TRIAL-WORDPOS" (e.g., "1-5-3").
+    # Use PART-TRIAL as the sentence identifier.
+    parts = df["WORD_ID"].str.extract(r"(\d+)-(\d+)-(\d+)")
+    # Drop rows where WORD_ID didn't match the expected format
+    valid_mask = parts[0].notna()
+    df = df[valid_mask].copy()
+    parts = parts[valid_mask]
+    df["sentence_id"] = parts[0].astype(int) * 10000 + parts[1].astype(int)
+    df["word_position"] = parts[2].astype(int)
 
     # Use WORD_TOTAL_READING_TIME or WORD_FIXATION_DURATION if available
     fixation_col = None
@@ -103,6 +110,9 @@ def load_geco_corpus(data_dir: str | Path) -> pd.DataFrame:
 
     if fixation_col is None:
         raise ValueError("No fixation duration column found in GECO data")
+
+    # GECO uses "." for missing fixation values — coerce to numeric NaN
+    df[fixation_col] = pd.to_numeric(df[fixation_col], errors="coerce")
 
     processed = df.rename(
         columns={
