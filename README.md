@@ -56,7 +56,7 @@ git clone https://github.com/<your-org>/gaze-diffuse.git
 cd gaze-diffuse
 git submodule update --init --recursive
 pip install -e ".[dev]"
-python3 -m pytest tests/ -m unit -v  # Verify 38 tests pass
+python3 -m pytest tests/ -v  # Verify 69 tests pass
 ```
 
 ### NYU Torch HPC
@@ -85,7 +85,7 @@ gaze-diffuse/
 │   │   └── prompts.py         # 50 shared prompt seeds
 │   └── models/
 │       └── mdlm_wrapper.py    # MDLM + LLaDA inference wrappers
-├── tests/                     # 38 unit tests, pytest
+├── tests/                     # 69 tests (unit + integration + smoke), pytest
 ├── scripts/
 │   ├── setup_hpc.sh           # One-time HPC environment setup
 │   ├── download_data.sh       # Download eye-tracking datasets
