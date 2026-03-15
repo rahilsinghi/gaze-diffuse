@@ -1,0 +1,62 @@
+% Main results table: Methods x Metrics
+% Matches the structure from README.md
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+\textbf{Method}
+  & \textbf{FKGL} ($\lambda{=}{-}1$)
+  & \textbf{FKGL} ($\lambda{=}0$)
+  & \textbf{FKGL} ($\lambda{=}{+}1$)
+  & \textbf{ARI}
+  & \textbf{MAUVE} $\uparrow$
+  & \textbf{Self-PPL} $\downarrow$
+  & \textbf{FK Var.} $\downarrow$ \\
+\midrule
+Unguided MDLM
+  & ---
+  & \textit{TBD}
+  & ---
+  & \textit{TBD}
+  & ---
+  & \textit{TBD}
+  & \textit{TBD} \\
+AR + Gaze (GPT-2)
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD} \\
+\midrule
+\textbf{GazeDiffuse (MDLM)}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD} \\
+\textbf{GazeDiffuse (LLaDA 8B)}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD}
+  & \textit{TBD} \\
+\bottomrule
+\end{tabular}
+\caption{
+  Main results across readability and quality metrics.
+  FKGL columns show Flesch--Kincaid Grade Level at three guidance strengths.
+  MAUVE measures distributional similarity to unguided text (higher is better).
+  Self-PPL is perplexity under the base LM (lower is better).
+  FK Var.\ is sentence-level FKGL variance (lower indicates more consistent readability).
+  % TODO: Fill in numbers once experiments complete.
+}
+\label{tab:results}
+\end{table*}

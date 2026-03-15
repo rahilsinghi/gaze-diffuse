@@ -1,0 +1,234 @@
+% GazeDiffuse -- EMNLP 2026 Submission
+% Template: EMNLP 2023 style (emnlp2023.sty)
+
+\documentclass[11pt]{article}
+\usepackage{emnlp2023}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{url}
+
+\title{GazeDiffuse: Controllable Readability in Text Diffusion Models\\via Gaze-Guided Parallel Decoding}
+
+\author{
+  Rahil Singhi\textsuperscript{1} \quad
+  Siddhant\textsuperscript{1} \quad
+  Sai Qian Zhang\textsuperscript{1,2} \\
+  \textsuperscript{1}NYU Tandon School of Engineering \quad
+  \textsuperscript{2}NYU Courant Institute of Mathematical Sciences \\
+  SAI Lab \\
+  \texttt{\{rs9174, siddhant, sai.qian.zhang\}@nyu.edu}
+}
+
+\begin{document}
+\maketitle
+
+% ---------------------------------------------------------------------------
+% ABSTRACT
+% ---------------------------------------------------------------------------
+\begin{abstract}
+% TODO: ~150 words. Outline:
+% - Readability control in text generation is important for accessibility
+%   and education, but prior gaze-guided methods operate autoregressively,
+%   applying guidance one token at a time.
+% - We propose GazeDiffuse, a training-free method that steers masked
+%   diffusion language models (MDLM, LLaDA) at every denoising step using
+%   predicted gaze fixation durations from eye-tracking data.
+% - Because diffusion models decode all positions in parallel, gaze guidance
+%   acts globally, yielding more consistent readability shifts with lower
+%   sentence-level variance than autoregressive baselines.
+% - Experiments on 50 shared prompts show that GazeDiffuse produces
+%   controllable FKGL shifts while preserving fluency (MAUVE) and
+%   coherence (self-PPL).
+% - GazeDiffuse is the first method combining gaze-guided generation with
+%   text diffusion models.
+\end{abstract}
+
+% ---------------------------------------------------------------------------
+% 1  INTRODUCTION
+% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+% TODO: Motivate readability control for accessibility and education.
+% Introduce the gap: prior gaze-guided work (Sauberli et al., EACL 2026)
+% is autoregressive, applying guidance token-by-token.
+% State the core idea: applying gaze signals to masked diffusion LMs enables
+% parallel guidance across all positions at each denoising step.
+% Summarize contributions:
+%   (1) GazeDiffuse algorithm,
+%   (2) training-free integration with MDLM and LLaDA,
+%   (3) empirical evidence of lower FK variance vs. AR baselines.
+
+% ---------------------------------------------------------------------------
+% 2  RELATED WORK
+% ---------------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+
+% TODO: Cover three threads and position our contribution at their intersection.
+
+\paragraph{Gaze-Guided Text Generation.}
+% TODO: Discuss Sauberli et al. (EACL 2026) and the broader literature on
+% using eye-tracking signals for NLP tasks. Contrast AR guidance (one token
+% at a time) with our parallel approach.
+
+\paragraph{Discrete Text Diffusion Models.}
+% TODO: Review Diffusion-LM (Li et al., 2022), MDLM (Sahoo et al., 2024),
+% and LLaDA (Nie et al., 2025). Emphasize masked diffusion as the setting
+% for our work and distinguish from continuous diffusion approaches.
+
+\paragraph{Controllable Text Generation.}
+% TODO: Briefly survey classifier guidance, PPLM, and other decoding-time
+% control methods. Note that most operate in continuous diffusion or AR
+% settings; our work is the first discrete-diffusion gaze-guided method.
+
+% ---------------------------------------------------------------------------
+% 3  METHOD
+% ---------------------------------------------------------------------------
+\section{Method}
+\label{sec:method}
+
+% TODO: Present the GazeDiffuse algorithm in three parts:
+% (1) Background on masked diffusion LMs (forward/reverse process),
+% (2) Gaze predictor (BERT fine-tuned on GECO corpus),
+% (3) Gaze-guided scoring rule: score = log P_LM(token) + lambda * gaze(token).
+% Include the full algorithm box and explain the lambda control parameter.
+
+\input{figures/method_overview}
+
+\subsection{Masked Diffusion Language Models}
+\label{sec:method:mdlm}
+
+% TODO: Define the forward masking process and the reverse denoising
+% objective following MDLM (Sahoo et al., 2024). Establish notation
+% used throughout the paper.
+
+\subsection{Gaze Predictor}
+\label{sec:method:gaze}
+
+% TODO: Describe the BERT-base model fine-tuned on the GECO eye-tracking
+% corpus (Cop et al., 2017) to predict mean fixation duration per token.
+% Mention the 5-token context window and subject-level cross-validation.
+
+\subsection{Gaze-Guided Parallel Decoding}
+\label{sec:method:guidance}
+
+% TODO: Present the core GazeDiffuse scoring function. Explain how lambda
+% controls readability direction (negative = easier, positive = harder).
+% Contrast with AR gaze guidance to highlight the parallel advantage.
+
+% ---------------------------------------------------------------------------
+% 4  EXPERIMENTAL SETUP
+% ---------------------------------------------------------------------------
+\section{Experimental Setup}
+\label{sec:experiments}
+
+% TODO: Describe the experimental design covering models, baselines,
+% prompts, and evaluation protocol.
+
+\subsection{Models and Baselines}
+\label{sec:experiments:models}
+
+% TODO: List all methods compared: Unguided MDLM, AR + Gaze (GPT-2),
+% GazeDiffuse (MDLM), GazeDiffuse (LLaDA 8B). Specify model sizes,
+% checkpoints, and any frozen/trainable components.
+
+\subsection{Evaluation Metrics}
+\label{sec:experiments:metrics}
+
+% TODO: Define each metric and its role:
+% FKGL and ARI for readability, MAUVE for distributional similarity,
+% self-PPL for coherence, FK sentence variance for consistency.
+% Cite Kincaid (1975), Senter & Smith (1967), Pillutla et al. (2021).
+
+\subsection{Data and Prompts}
+\label{sec:experiments:data}
+
+% TODO: Describe the 50 shared prompt seeds, the GECO corpus for gaze
+% predictor training, and generation hyperparameters (gen_length, steps,
+% lambda values in the sweep).
+
+% ---------------------------------------------------------------------------
+% 5  RESULTS
+% ---------------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+% TODO: Present main quantitative results. Reference the results table.
+% Highlight: (1) FKGL shift with lambda, (2) MAUVE preservation,
+% (3) FK variance comparison between GazeDiffuse and AR baseline.
+
+\input{tables/results}
+
+% ---------------------------------------------------------------------------
+% 6  ANALYSIS
+% ---------------------------------------------------------------------------
+\section{Analysis}
+\label{sec:analysis}
+
+% TODO: Deeper investigation beyond the main results table.
+
+\paragraph{Readability Consistency.}
+% TODO: Analyze FK sentence variance in detail. Show that parallel
+% decoding yields more uniform readability across sentences than
+% sequential AR guidance.
+
+\paragraph{Lambda Sensitivity.}
+% TODO: Plot or table showing FKGL as a function of lambda for each
+% method. Discuss the effective range and diminishing returns.
+
+\paragraph{Qualitative Examples.}
+% TODO: Include 2-3 cherry-picked generation examples at different
+% lambda values showing readable vs. complex output from the same prompt.
+
+% ---------------------------------------------------------------------------
+% 7  CONCLUSION
+% ---------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+% TODO: Summarize the contribution: GazeDiffuse is the first method to
+% combine gaze-guided generation with text diffusion models. Recap the
+% key empirical findings (controllable FKGL, lower variance, preserved
+% fluency). Discuss limitations and future directions (e.g., scaling to
+% larger diffusion LMs, multilingual gaze data, user studies).
+
+% ---------------------------------------------------------------------------
+% LIMITATIONS
+% ---------------------------------------------------------------------------
+\section*{Limitations}
+
+% TODO: Discuss limitations honestly: (1) gaze predictor trained on
+% English-only GECO data, (2) evaluation on a single prompt set,
+% (3) no human evaluation yet, (4) computational overhead of gaze
+% scoring at each denoising step.
+
+% ---------------------------------------------------------------------------
+% ETHICS STATEMENT
+% ---------------------------------------------------------------------------
+\section*{Ethics Statement}
+
+% TODO: Address ethical considerations: use of eye-tracking data,
+% potential for misuse (deliberately obscuring text), accessibility
+% benefits for low-literacy populations.
+
+% ---------------------------------------------------------------------------
+% ACKNOWLEDGMENTS
+% ---------------------------------------------------------------------------
+\section*{Acknowledgments}
+
+% TODO: Thank Prof. Sai Qian Zhang, NYU SAI Lab, NYU HPC team,
+% Kuleshov Group (Cornell) for MDLM codebase, Sauberli et al. for
+% the gaze-guided generation framework.
+
+\bibliography{references}
+\bibliographystyle{acl_natbib}
+
+\end{document}

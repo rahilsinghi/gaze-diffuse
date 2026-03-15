@@ -1,0 +1,58 @@
+% Method overview figure placeholder
+% TODO: Create a TikZ diagram illustrating the GazeDiffuse pipeline.
+%
+% Suggested layout (left to right):
+%
+%   [Prompt + MASK tokens]
+%       |
+%       v
+%   +---------------------------+
+%   | Frozen MDLM / LLaDA      |  --> log P_LM(token | context)
+%   +---------------------------+
+%       |
+%       v
+%   +---------------------------+
+%   | Gaze Predictor (BERT)     |  --> gaze(token) = predicted fixation duration
+%   +---------------------------+
+%       |
+%       v
+%   +---------------------------+
+%   | Combined Scoring          |
+%   | score = log P + lambda *  |
+%   |         gaze(token)       |
+%   +---------------------------+
+%       |
+%       v
+%   [Reveal highest-confidence tokens]
+%       |
+%       v  (repeat for T denoising steps)
+%   [Final generated text]
+%
+% Key visual elements:
+%   - Show parallel arrows across ALL masked positions (not sequential)
+%   - Color-code lambda direction: blue for easier (lambda < 0),
+%     red for harder (lambda > 0)
+%   - Contrast with a small inset showing AR (left-to-right, one at a time)
+%
+% Approximate size: \textwidth wide, ~6cm tall
+
+\begin{figure*}[t]
+\centering
+% TODO: Replace this placeholder box with the actual TikZ diagram.
+\fbox{\parbox{0.9\textwidth}{\centering\vspace{4cm}
+  \textbf{Method Overview} \\[6pt]
+  GazeDiffuse pipeline: Frozen diffusion LM + gaze predictor \\
+  with parallel guidance at each denoising step. \\
+  See comments in source for diagram specification.
+\vspace{4cm}}}
+\caption{
+  Overview of the GazeDiffuse method. At each denoising step, a frozen
+  masked diffusion LM produces token log-probabilities for all masked
+  positions simultaneously. A gaze predictor scores each candidate by
+  predicted fixation duration. The combined score
+  $s = \log P_{\text{LM}}(w) + \lambda \cdot \text{gaze}(w)$ selects
+  tokens, with $\lambda < 0$ favoring easier words and $\lambda > 0$
+  favoring harder words.
+}
+\label{fig:method}
+\end{figure*}
