@@ -41,6 +41,10 @@ results/
 logs/
 wandb/
 
+# Coverage
+.coverage
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db
