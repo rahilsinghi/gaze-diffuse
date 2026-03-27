@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import numpy as np
@@ -228,7 +228,12 @@ def train_gaze_predictor(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     logger.info("Training on device: %s", device)
 
     # Load data
@@ -251,10 +256,10 @@ def train_gaze_predictor(
     )
 
     train_loader = DataLoader(
-        train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=2
+        train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=0
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=2
+        val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=0
     )
 
     # Model
@@ -335,7 +340,7 @@ def train_gaze_predictor(
             torch.save(
                 {
                     "model_state_dict": model.state_dict(),
-                    "config": config,
+                    "config": asdict(config),
                     "normalization": train_dataset.get_normalization_stats(),
                     "spearman_r": spearman_r,
                     "epoch": epoch,
@@ -354,7 +359,7 @@ def train_gaze_predictor(
     torch.save(
         {
             "model_state_dict": model.state_dict(),
-            "config": config,
+            "config": asdict(config),
             "normalization": train_dataset.get_normalization_stats(),
             "metrics": metrics,
         },
@@ -374,10 +379,19 @@ def load_trained_predictor(
         (model, (mean, std)) — the model and normalization stats.
     """
     if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    config = checkpoint["config"]
+    cfg = checkpoint["config"]
+    if isinstance(cfg, dict):
+        config = GazePredictorConfig(**cfg)
+    else:
+        config = cfg
     model = GazePredictor(config)
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
