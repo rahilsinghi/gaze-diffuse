@@ -66,7 +66,9 @@ def load_geco_corpus(data_dir: str | Path) -> pd.DataFrame:
     csv_path = data_dir / "geco_processed.csv"
     if csv_path.exists():
         logger.info("Loading pre-processed GECO from %s", csv_path)
-        return pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path)
+        df["word"] = df["word"].astype(str)
+        return df
 
     xlsx_path = data_dir / "MonolingualReadingData.xlsx"
     if not xlsx_path.exists():
@@ -122,8 +124,10 @@ def load_geco_corpus(data_dir: str | Path) -> pd.DataFrame:
         }
     )[["word", "sentence_id", "word_position", "participant", "mean_fixation_ms"]]
 
-    # Drop NaN fixations (skipped words)
-    processed = processed.dropna(subset=["mean_fixation_ms"])
+    # Drop rows with NaN words or fixations
+    processed = processed.dropna(subset=["word", "mean_fixation_ms"])
+    # Ensure word column is string (some numeric-looking words get parsed as float)
+    processed["word"] = processed["word"].astype(str)
 
     # Save processed version for faster loading next time
     processed.to_csv(csv_path, index=False)
