@@ -179,7 +179,12 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default="results/ar_baseline_generations.jsonl")
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
     logger.info("Loading gaze predictor from %s", args.gaze_checkpoint)
     gaze_pred, _ = load_trained_predictor(args.gaze_checkpoint, device)
@@ -188,6 +193,8 @@ if __name__ == "__main__":
     lm = AutoModelForCausalLM.from_pretrained(args.model_name).to(device)
     lm.eval()
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
     config = ARGazeConfig(
         model_name=args.model_name,
