@@ -180,9 +180,18 @@ coherent readability changes.
 - GPT-2 tokenizer missing pad_token causes ValueError in `score_vocabulary` — added `tokenizer.pad_token = tokenizer.eos_token` in `ar_baseline.py`
 - Checkpoint pickle portability: config saved as `__main__.GazePredictorConfig` — re-saved as dict, fixed `train_gaze_predictor` to use `asdict(config)` going forward
 
-**HPC Status:**
-- Still need to test SSH access (user connecting to VPN)
-- 2 weeks since initial email to Prof. Zhang (Session 1, Mar 12) — follow-up needed
+**HPC Access Update (2026-03-27):**
+- SSH to Torch works: `ssh rs9174@login.torch.hpc.nyu.edu` (Microsoft device login)
+- `$SCRATCH` exists at `/scratch/rs9174`
+- **Cannot submit jobs**: need a `torch_pr_xxx_yyy` project account, currently only have default `users`
+- Portal URL changed: now `https://projects.hpc.nyu.edu` (NOT `projects.rit.nyu.edu` as assumed in Session 1)
+- **GPU hardware is different than assumed**:
+  - NO rtx8000 or a100 partitions on Torch
+  - Available: H200 (8x per node), H100 (4x per node), L40S (4x per node)
+  - Public partitions: `h200_public`, `l40s_public`
+  - All SLURM scripts need updating for new partition names and GPU types
+- Conda module: `anaconda3/2025.06` (not 2024.02 as assumed)
+- Follow-up email drafted to Prof. Zhang requesting project account registration
 
 ---
 
@@ -227,6 +236,9 @@ score = log P_LM(token) + lambda * gaze(token)
 - Use `textstat.textstatistics().text_sentences()` (removed in textstat >= 0.7)
 - Expect SSH keys to work on Torch HPC (uses Microsoft device login only)
 - Try to SSH to Torch without NYU VPN active
+- Assume Torch has RTX8000 or A100 GPUs — it has H200, H100, L40S
+- Use `projects.rit.nyu.edu` for HPC projects — new URL is `projects.hpc.nyu.edu`
+- Assume conda module is `anaconda3/2024.02` — it's `anaconda3/2025.06`
 - Assume training loss will monotonically decrease with high LR on tiny synthetic data
 
 ### WATCH OUT FOR:
@@ -288,13 +300,13 @@ score = log P_LM(token) + lambda * gaze(token)
 
 | # | Experiment | GPU | Time | Owner | Status |
 |---|-----------|-----|------|-------|--------|
-| 1 | MDLM baseline PPL on OpenWebText | 1x RTX8000 | ~4h | Rahil | BLOCKED (HPC access) |
-| 2 | Gaze predictor training (BERT on GECO) | 1x RTX8000 | ~2h | Siddhant | DONE (local MPS, r=0.241, Session 3) |
-| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x RTX8000 | ~8h | Siddhant | IN PROGRESS (local GPT-2 small, Session 3) |
-| 4 | GazeDiffuse on MDLM (lambda x steps grid) | 1x RTX8000 | ~12h | Rahil | BLOCKED (HPC access) |
-| 5 | GazeDiffuse on LLaDA 8B (lambda subset) | 1x A100 | ~12h | Both | BLOCKED (HPC access) |
+| 1 | MDLM baseline PPL on OpenWebText | 1x H100/L40S | ~2h | Rahil | BLOCKED (need project account) |
+| 2 | Gaze predictor training (BERT on GECO) | 1x H100/L40S | ~30min | Siddhant | DONE (local MPS, r=0.241, Session 3) |
+| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x H100/L40S | ~4h | Siddhant | IN PROGRESS (local GPT-2 small, Session 3) |
+| 4 | GazeDiffuse on MDLM (lambda x steps grid) | 1x H100/L40S | ~6h | Rahil | BLOCKED (need project account) |
+| 5 | GazeDiffuse on LLaDA 8B (lambda subset) | 1x H200 | ~6h | Both | BLOCKED (need project account) |
 
-**All experiments blocked on**: Prof. Zhang adding rs9174 to `torch_pr_111_general` project via `projects.rit.nyu.edu`
+**Blocked on**: Prof. Zhang registering HPC project at `https://projects.hpc.nyu.edu` and adding rs9174
 
 ---
 
