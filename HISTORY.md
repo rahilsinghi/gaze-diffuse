@@ -114,6 +114,76 @@ coherent readability changes.
 - GECO: 774,015 rows, 57 columns, 14 participants, fixation median ~200-300ms
 - Test suite runs in ~28 seconds (excluding GECO xlsx load which takes ~3 min)
 
+### Session 3 — 2026-03-26 (Local Environment Setup + Training Launch)
+
+**What was done:**
+1. Set up local development environment:
+   - Created `.venv` with Python 3.14.3 (Homebrew)
+   - Installed all deps via `pip install -e ".[dev]"` — torch 2.11, transformers 5.4, etc.
+   - Added `openpyxl` (missing dep for GECO xlsx parsing)
+   - Confirmed PyTorch MPS available (Apple Silicon GPU acceleration)
+2. Downloaded GECO eye-tracking corpus (220MB) to `data/geco/`
+   - Processed CSV cache created automatically (loads in <1s after first parse)
+   - Validated: 473,116 rows, 14 participants, mean fixation 274.3ms, median 230ms
+3. Ran full test suite: 69/69 passing (including 5 GECO data tests that were skipped before)
+4. Fixed training code for local execution:
+   - Added MPS device support (CUDA > MPS > CPU fallback) in `gaze_predictor.py`
+   - Fixed `num_workers=2` → `num_workers=0` in training DataLoaders (macOS fork hang)
+5. Started Experiment 2 (gaze predictor training) locally on MPS:
+   - BERT-base-uncased, 3 epochs, batch_size=32, lr=2e-5
+   - ~44K steps total, estimated 30-45 min on Apple Silicon
+6. Created `CLAUDE.md` with project context for AI assistants
+7. Updated `HISTORY.md` with Session 3 findings
+
+**Bugs Found and Fixed:**
+- `openpyxl` not in `pyproject.toml` dependencies — needed for `pd.read_excel()` on GECO xlsx
+- `num_workers=2` in training DataLoaders causes macOS fork hangs — changed to 0
+- Training code only checked CUDA, not MPS — added MPS fallback for Apple Silicon
+- GECO data has 12 rows with NaN words (sentence 20028, position 46) — added `dropna(subset=["word"])` in loader
+- GECO CSV reload parses numeric-looking words (e.g., "1984") as floats — added `astype(str)` on word column in both xlsx processing and CSV reload paths. 205 words affected.
+- Checkpoint pickle portability: `torch.save` pickles `GazePredictorConfig` as `__main__.GazePredictorConfig` when training runs via `python -m src.gaze_predictor`. Loading from another module (e.g., `ar_baseline`) fails with `AttributeError: module '__main__' has no attribute 'GazePredictorConfig'`. Fix: save config as `asdict(config)` dict, reconstruct on load. Re-saved both checkpoints.
+
+**Key Numbers:**
+- GECO data: 473,116 rows, 14 participants, fixation range 0-1998ms
+- After filtering: 472,945 training examples
+- 69/69 tests passing, 51% coverage
+- Local env: Python 3.14.3, PyTorch 2.11.0, MPS enabled
+
+**Experiment 2 Results (Gaze Predictor — Local MPS):**
+- Best Spearman r: 0.241 (epoch 2)
+- Train loss: 0.942 → 0.909 → 0.881 (steadily decreasing)
+- Val loss: 0.934 → 0.931 → 0.936 (slight overfit by epoch 3)
+- Best checkpoint: `checkpoints/gaze_predictor/gaze_predictor_best.pt` (418MB)
+- Total training time: ~3.5 hours on MPS (Apple Silicon), num_workers=0
+- Note: Spearman r=0.24 is below Sauberli et al. (~0.3-0.4). Possible improvements:
+  - More epochs (try 5-10)
+  - Pre-tokenize dataset to speed up training
+  - Tune LR or try warmup schedule
+  - Run on GPU for faster iteration
+
+**Experiment 3 Preliminary Results (AR Baseline — GPT-2 small, 5 samples each, 64 tokens):**
+- Lambda=+1 (harder): FKGL=11.22, ARI=11.69, FK Var=3.54 — guidance working, higher readability + low variance
+- Lambda=0 (unguided): FKGL=8.56, ARI=6.65, FK Var=10.87 — baseline
+- Lambda=-1 (easier): FKGL=10.91, ARI=10.54, FK Var=15.57 — NOT working as expected (higher than unguided, should be lower)
+- Possible cause: gaze predictor r=0.24 too weak for reliable easier-direction guidance
+- Need more samples (200+) and stronger predictor for conclusive results
+
+**Experiment 3 Larger Run (AR Baseline — GPT-2 small, 20 samples, 128 tokens):**
+- Lambda=+1: FKGL=12.57, ARI=13.64, FK Var=21.19 — slight upward shift (correct direction)
+- Lambda=0:  FKGL=11.44, ARI=11.79, FK Var=13.23 — baseline (very high std=9.86)
+- Lambda=-1: FKGL=11.66, ARI=11.79, FK Var=22.98 — not working (indistinguishable from unguided)
+- Conclusion: gaze predictor r=0.24 too weak to reliably steer. Need more epochs or better training
+- GPT-2 small produces highly variable readability (std ~10-13), masking any guidance signal
+- GPT-2 tokenizer has no pad_token — added `pad_token = eos_token` fallback in ar_baseline.py
+
+**Bugs Found and Fixed (continued):**
+- GPT-2 tokenizer missing pad_token causes ValueError in `score_vocabulary` — added `tokenizer.pad_token = tokenizer.eos_token` in `ar_baseline.py`
+- Checkpoint pickle portability: config saved as `__main__.GazePredictorConfig` — re-saved as dict, fixed `train_gaze_predictor` to use `asdict(config)` going forward
+
+**HPC Status:**
+- Still need to test SSH access (user connecting to VPN)
+- 2 weeks since initial email to Prof. Zhang (Session 1, Mar 12) — follow-up needed
+
 ---
 
 ## Architecture and Design Decisions
@@ -219,8 +289,8 @@ score = log P_LM(token) + lambda * gaze(token)
 | # | Experiment | GPU | Time | Owner | Status |
 |---|-----------|-----|------|-------|--------|
 | 1 | MDLM baseline PPL on OpenWebText | 1x RTX8000 | ~4h | Rahil | BLOCKED (HPC access) |
-| 2 | Gaze predictor training (BERT on GECO) | 1x RTX8000 | ~2h | Siddhant | BLOCKED (HPC access) |
-| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x RTX8000 | ~8h | Siddhant | BLOCKED (HPC access) |
+| 2 | Gaze predictor training (BERT on GECO) | 1x RTX8000 | ~2h | Siddhant | DONE (local MPS, r=0.241, Session 3) |
+| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x RTX8000 | ~8h | Siddhant | IN PROGRESS (local GPT-2 small, Session 3) |
 | 4 | GazeDiffuse on MDLM (lambda x steps grid) | 1x RTX8000 | ~12h | Rahil | BLOCKED (HPC access) |
 | 5 | GazeDiffuse on LLaDA 8B (lambda subset) | 1x A100 | ~12h | Both | BLOCKED (HPC access) |
 
@@ -239,7 +309,7 @@ score = log P_LM(token) + lambda * gaze(token)
 
 ### High Priority (Paper Progress)
 - [ ] **Run Experiment 1**: MDLM baseline PPL — validates the diffusion model works
-- [ ] **Run Experiment 2**: Gaze predictor training — needed by all other experiments
+- [x] **Run Experiment 2**: Gaze predictor training — running locally on MPS (Session 3)
 - [ ] **Run Experiment 3**: AR baseline lambda sweep — the comparison target
 - [ ] **Run Experiment 4**: GazeDiffuse MDLM grid — the main result
 - [ ] **Fill paper results table**: Once experiments produce data
