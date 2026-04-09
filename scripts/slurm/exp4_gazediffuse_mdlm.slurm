@@ -2,7 +2,7 @@
 # ============================================================
 # Experiment 4: GazeDiffuse on MDLM ★ PRIMARY CONTRIBUTION ★
 # Goal: Gaze-guided MDLM at lambda={-2,-1,0,+1,+2} x T={32,64,128,256}
-# GPU: 1x RTX8000 (48GB) | Time: ~6-8 hours
+# GPU: 1x H100 (80GB) | Time: ~6-8 hours
 # Owner: Rahil | Week 3-4
 # ============================================================
 #SBATCH --job-name=exp4-gazediffuse
@@ -10,13 +10,14 @@
 #SBATCH --error=logs/exp4_%j.err
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=40GB
-#SBATCH --gres=gpu:rtx8000:1
+#SBATCH --partition=h100_tandon
+#SBATCH --gres=gpu:h100:1
 #SBATCH --time=12:00:00
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=rs9174@nyu.edu
-#SBATCH --account=torch_pr_111_general
+#SBATCH --account=torch_pr_xxx_yyy
 
-module purge && module load anaconda3/2024.02
+module purge && module load anaconda3/2025.06
 conda activate $SCRATCH/envs/gazediffuse
 
 cd $SCRATCH/gaze-diffuse

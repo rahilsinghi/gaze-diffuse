@@ -2,7 +2,7 @@
 # ============================================================
 # Experiment 3: AR Gaze Guidance Baseline (Sauberli Replication)
 # Goal: GPT-2-medium + gaze guidance at lambda={-2,-1,0,+1,+2}
-# GPU: 1x RTX8000 (48GB) | Time: ~3-4 hours per lambda
+# GPU: 1x H100 (80GB) | Time: ~3-4 hours per lambda
 # Owner: Siddhant | Week 2-3
 # ============================================================
 #SBATCH --job-name=exp3-ar-gaze
@@ -10,13 +10,14 @@
 #SBATCH --error=logs/exp3_%j.err
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=40GB
-#SBATCH --gres=gpu:rtx8000:1
+#SBATCH --partition=h100_tandon
+#SBATCH --gres=gpu:h100:1
 #SBATCH --time=08:00:00
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=rs9174@nyu.edu
-#SBATCH --account=torch_pr_111_general
+#SBATCH --account=torch_pr_xxx_yyy
 
-module purge && module load anaconda3/2024.02
+module purge && module load anaconda3/2025.06
 conda activate $SCRATCH/envs/gazediffuse
 
 cd $SCRATCH/gaze-diffuse

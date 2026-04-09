@@ -31,7 +31,7 @@ echo "Env dir: $ENV_DIR"
 
 # --- Load modules ---
 module purge
-module load anaconda3/2024.02
+module load anaconda3/2025.06
 echo "Loaded anaconda3"
 
 # --- Create conda environment in $SCRATCH (NOT $HOME — 50GB quota!) ---

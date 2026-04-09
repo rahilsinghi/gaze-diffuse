@@ -2,7 +2,7 @@
 # ============================================================
 # Experiment 2: Train Gaze Fixation Duration Predictor
 # Goal: BERT-base fine-tuned on GECO, Spearman r ~ 0.35-0.50
-# GPU: 1x RTX8000 (48GB) | Time: ~30 minutes
+# GPU: 1x H100 (80GB) | Time: ~30 minutes
 # Owner: Siddhant | Week 1-2
 # ============================================================
 #SBATCH --job-name=exp2-gaze-pred
@@ -10,13 +10,14 @@
 #SBATCH --error=logs/exp2_%j.err
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=40GB
-#SBATCH --gres=gpu:rtx8000:1
+#SBATCH --partition=h100_tandon
+#SBATCH --gres=gpu:h100:1
 #SBATCH --time=02:00:00
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=rs9174@nyu.edu
-#SBATCH --account=torch_pr_111_general
+#SBATCH --account=torch_pr_xxx_yyy
 
-module purge && module load anaconda3/2024.02
+module purge && module load anaconda3/2025.06
 conda activate $SCRATCH/envs/gazediffuse
 
 cd $SCRATCH/gaze-diffuse
