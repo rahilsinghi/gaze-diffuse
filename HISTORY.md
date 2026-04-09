@@ -193,6 +193,50 @@ coherent readability changes.
 - Conda module: `anaconda3/2025.06` (not 2024.02 as assumed)
 - Follow-up email drafted to Prof. Zhang requesting project account registration
 
+### Session 4 — 2026-04-06 (HPC Verification + Retraining + Test Coverage)
+
+**What was done:**
+1. Connected to NYU VPN and SSHed into Torch HPC
+2. Verified HPC project account status — still only `users`, no `torch_pr_*` account
+   - `sacctmgr show associations user=rs9174` shows only `users` account with `normal` QOS
+   - Cannot submit GPU jobs until Prof. Zhang registers project at https://projects.hpc.nyu.edu
+3. Ran `sinfo` to get full partition/GPU inventory — **corrected previous assumptions**:
+   - A100 GPUs DO exist (4x/node, 43 nodes, partitions: a100_cilvr, a100_cds, a100_chemistry)
+   - RTX6000 GPUs exist (8x/node, 2 nodes)
+   - Tandon-specific partitions: `h200_tandon`, `h100_tandon`
+4. Updated all 5 SLURM scripts:
+   - `rtx8000` → `h100_tandon` (exp 1-4), `a100` → `h200_tandon` (exp 5)
+   - Added `--partition=` lines to all scripts
+   - Updated `--account=torch_pr_xxx_yyy` placeholder
+5. Updated `setup_hpc.sh`: conda module `anaconda3/2024.02` → `anaconda3/2025.06`
+6. Verified all 69 tests pass (27.89s)
+7. Kicked off gaze predictor retraining: 10 epochs (up from 3), targeting r=0.3-0.4
+   - Same hyperparams: BERT-base, batch_size=32, lr=2e-5
+   - Running on local MPS, estimated ~10-12 hours
+8. Boosted test coverage from 51% toward 80%:
+   - Added tests for gaze_guidance.py: generate_samples, save_generations, MDLM wrapper version
+   - Added tests for metrics.py: load_generations, print_results_table, perplexity/MAUVE mocking
+   - Added new test file for mdlm_wrapper.py: MDLMWrapper and LLaDAWrapper methods
+9. Updated CLAUDE.md and HISTORY.md with corrected GPU/partition info
+10. Created persistent memory files for future session continuity
+
+**HPC Partition Discovery (via `sinfo` on 2026-04-06):**
+- h200_tandon: gpu:h200:8 (7 on gh126), nodes gh101-130
+- h100_tandon: gpu:h100:4, nodes gh001-015
+- h200_public: same nodes as h200_tandon
+- l40s_public: gpu:l40s:4, nodes gl001-068
+- a100_cilvr/a100_cds/a100_chemistry: gpu:a100:4, nodes ga001-043
+- rtx6000: gpu:rtx6000:8, nodes gr101-102
+
+**Key Numbers:**
+- 69 tests passing (pre-coverage-boost), 51% coverage
+- Gaze predictor retraining: 10 epochs on MPS, ~10-12 hours
+- HPC account: still `users` only (blocked)
+
+**Known Issues:**
+- Multi-line sbatch commands break in Torch terminal — use script files instead
+- SSH host key changes periodically — `ssh-keygen -R login.torch.hpc.nyu.edu` to fix
+
 ---
 
 ## Architecture and Design Decisions
@@ -236,7 +280,7 @@ score = log P_LM(token) + lambda * gaze(token)
 - Use `textstat.textstatistics().text_sentences()` (removed in textstat >= 0.7)
 - Expect SSH keys to work on Torch HPC (uses Microsoft device login only)
 - Try to SSH to Torch without NYU VPN active
-- Assume Torch has RTX8000 or A100 GPUs — it has H200, H100, L40S
+- Assume Torch only has H200/H100 — it also has A100 (4x/node), L40S (4x/node), RTX6000 (8x/node)
 - Use `projects.rit.nyu.edu` for HPC projects — new URL is `projects.hpc.nyu.edu`
 - Assume conda module is `anaconda3/2024.02` — it's `anaconda3/2025.06`
 - Assume training loss will monotonically decrease with high LR on tiny synthetic data
@@ -301,8 +345,8 @@ score = log P_LM(token) + lambda * gaze(token)
 | # | Experiment | GPU | Time | Owner | Status |
 |---|-----------|-----|------|-------|--------|
 | 1 | MDLM baseline PPL on OpenWebText | 1x H100/L40S | ~2h | Rahil | BLOCKED (need project account) |
-| 2 | Gaze predictor training (BERT on GECO) | 1x H100/L40S | ~30min | Siddhant | DONE (local MPS, r=0.241, Session 3) |
-| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x H100/L40S | ~4h | Siddhant | IN PROGRESS (local GPT-2 small, Session 3) |
+| 2 | Gaze predictor training (BERT on GECO) | 1x H100/L40S | ~30min | Siddhant | DONE (r=0.241). 10-epoch retraining launched Session 4 |
+| 3 | AR gaze guidance baseline (GPT-2, lambda sweep) | 1x H100/L40S | ~4h | Siddhant | IN PROGRESS — needs stronger predictor from retraining |
 | 4 | GazeDiffuse on MDLM (lambda x steps grid) | 1x H100/L40S | ~6h | Rahil | BLOCKED (need project account) |
 | 5 | GazeDiffuse on LLaDA 8B (lambda subset) | 1x H200 | ~6h | Both | BLOCKED (need project account) |
 
@@ -314,8 +358,8 @@ score = log P_LM(token) + lambda * gaze(token)
 
 ### Critical (Blocking Experiments)
 - [ ] **HPC access**: Follow up with Prof. Zhang on account provisioning email
-- [ ] **Verify GPU types**: Run `sinfo` on Torch to confirm RTX8000/A100 availability
-- [ ] **Verify conda modules**: Check `module avail anaconda` on Torch (assumed `anaconda3/2024.02`)
+- [x] **Verify GPU types**: Confirmed via `sinfo` (Session 4) — H200, H100, A100, L40S, RTX6000
+- [x] **Verify conda modules**: Confirmed `anaconda3/2025.06` (Session 4)
 - [ ] **Run setup_hpc.sh**: Create conda env on Torch once access works
 - [ ] **Download data on HPC**: Run `download_data.sh` and `download_checkpoints.sh` on Torch
 
@@ -343,17 +387,22 @@ score = log P_LM(token) + lambda * gaze(token)
 
 ## Suggestions for Next Session
 
-1. **If HPC access is resolved**: Run experiments 1 and 2 immediately (they're prerequisites for everything else). While those run, start on experiment 3 (AR baseline).
+1. **Check gaze predictor retraining results** (launched Session 4, 10 epochs):
+   - Look at `checkpoints/gaze_predictor/gaze_predictor_best.pt` — target Spearman r >= 0.30
+   - If improved, re-run AR baseline (Exp 3) with 200+ samples for paper-ready numbers
 
-2. **If HPC still blocked**:
-   - Follow up on the email to Prof. Zhang
-   - Start writing the paper Introduction and Method sections (these don't need results)
-   - Create the TikZ method overview diagram
-   - Add WandB tracking to the training scripts
-   - Increase test coverage to 80%
+2. **Check HPC access**: SSH in, run `sacctmgr show associations user=rs9174 format=account,user,partition`
+   - If project account exists: run `scripts/setup_hpc.sh`, then experiments 1 and 4
+   - If still blocked: follow up with Prof. Zhang
 
-3. **Once first results arrive**:
-   - Run `python scripts/plot_results.py --results_dir results/ --output_dir results/figures/` to generate real plots
+3. **If HPC still blocked**:
+   - Run full AR baseline sweep locally (Exp 3) with retrained predictor
+   - Start writing paper Introduction and Method sections (don't need results)
+   - Create TikZ method overview diagram
+   - Add WandB tracking to training scripts
+
+4. **Once first results arrive**:
+   - Run `python scripts/plot_results.py --results_dir results/ --output_dir results/figures/`
    - Fill in `paper/tables/results.tex` with actual numbers
    - Write Results and Analysis sections
 
